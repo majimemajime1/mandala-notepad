@@ -1632,13 +1632,38 @@
 
         // Googleスプレッドシートに保存
         async function saveToGoogleSheets() {
-            const sheetId = document.getElementById('sheetId').value.trim();
-            const apiKey = document.getElementById('apiKey').value.trim();
-            
-            if (!sheetId || !apiKey) {
-                alert('GoogleスプレッドシートIDとAPI Keyを入力してください');
-                return;
-            }
+    const gasUrl = 'https://script.google.com/macros/s/AKfycbwUmX9CyWQXN3WaNdDUVNmRnKKpPyXZopzLoSHbjgtHGlKnTFFnWHyii-HsuJvz8S3b2A/exec';
+    
+    try {
+        setStatus('Googleスプレッドシートに保存中...');
+        
+        const data = {
+            action: 'save',
+            mandalaData: mandalaData,
+            nextId: nextId,
+            timestamp: new Date().toISOString()
+        };
+
+        const response = await fetch(gasUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.text();
+        
+        if (result.includes('success')) {
+            setStatus('Googleスプレッドシートに保存完了');
+        } else {
+            throw new Error('保存に失敗しました');
+        }
+    } catch (error) {
+        console.error('保存エラー:', error);
+        setStatus('保存に失敗しました: ' + error.message);
+    }
+}
 
             try {
                 setStatus('Googleスプレッドシートに保存中...');
