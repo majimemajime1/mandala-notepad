@@ -1631,7 +1631,8 @@
         }
 
         // Googleスプレッドシートに保存
-        async function saveToGoogleSheets() {
+        // Googleスプレッドシートに保存
+async function saveToGoogleSheets() {
     const gasUrl = 'https://script.google.com/macros/s/AKfycbwUmX9CyWQXN3WaNdDUVNmRnKKpPyXZopzLoSHbjgtHGlKnTFFnWHyii-HsuJvz8S3b2A/exec';
     
     try {
@@ -1665,92 +1666,52 @@
     }
 }
 
-            try {
-                setStatus('Googleスプレッドシートに保存中...');
-                
-                const data = [
-                    ['Type', 'Data'],
-                    ['MANDALA_DATA', JSON.stringify(mandalaData)],
-                    ['NEXT_ID', nextId.toString()]
-                ];
-
-                const gasUrl = 'https://script.google.com/macros/s/AKfycbwUmX9CyWQXN3WaNdDUVNmRnKKpPyXZopzLoSHbjgtHGlKnTFFnWHyii-HsuJvz8S3b2A/exec';
-                const response = await fetch(gasUrl, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-});
-
-                if (response.ok) {
-                    setStatus('Googleスプレッドシートに保存完了');
-                } else {
-                    throw new Error('保存に失敗しました: ' + response.status);
-                }
-            } catch (error) {
-                console.error('保存エラー:', error);
-                setStatus('保存に失敗しました: ' + error.message);
-            }
-        }
-
         // Googleスプレッドシートから読み込み
-        async function loadFromGoogleSheets() {
-        const gasUrl = 'https://script.google.com/macros/s/AKfycbwUmX9CyWQXN3WaNdDUVNmRnKKpPyXZopzLoSHbjgtHGlKnTFFnWHyii-HsuJvz8S3b2A/exec';
+        // Googleスプレッドシートから読み込み
+async function loadFromGoogleSheets() {
+    const gasUrl = 'https://script.google.com/macros/s/AKfycbwUmX9CyWQXN3WaNdDUVNmRnKKpPyXZopzLoSHbjgtHGlKnTFFnWHyii-HsuJvz8S3b2A/exec';
+    
+    try {
+        setStatus('Googleスプレッドシートから読み込み中...');
+        
+        const data = {
+            action: 'load'
+        };
 
-const data = {
-    action: 'load'
-};
+        const response = await fetch(gasUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
 
-            try {
-                setStatus('Googleスプレッドシートから読み込み中...');
-                
-                const response = await fetch(gasUrl, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-});
-
-                if (!response.ok) {
-                    throw new Error('読み込みに失敗しました: ' + response.status);
-                }
-
-                const result = await response.json();
-                const rows = result.values || [];
-                
-                if (rows.length < 2) {
-                    throw new Error('データが見つかりません');
-                }
-
-                rows.slice(1).forEach(row => {
-                    const [type, data] = row;
-                    if (type === 'MANDALA_DATA') {
-                        mandalaData = JSON.parse(data);
-                    } else if (type === 'NEXT_ID') {
-                        nextId = parseInt(data);
-                    }
-                });
-
-                saveToLocalStorage();
-                renderNavigation();
-                
-                // 最初のマンダラを表示
-                const firstId = Object.keys(mandalaData)[0];
-                if (firstId) {
-                    selectMandala(firstId);
-                } else {
-                    showEmptyState();
-                }
-                
-                setStatus('Googleスプレッドシートから読み込み完了');
-            } catch (error) {
-                console.error('読み込みエラー:', error);
-                setStatus('読み込みに失敗しました: ' + error.message);
+        const result = await response.text();
+        
+        if (result && result !== '{}') {
+            const loadedData = JSON.parse(result);
+            mandalaData = loadedData.mandalaData || {};
+            nextId = loadedData.nextId || 1;
+            
+            saveToLocalStorage();
+            renderNavigation();
+            
+            const firstId = Object.keys(mandalaData)[0];
+            if (firstId) {
+                selectMandala(firstId);
+            } else {
+                showEmptyState();
             }
+            
+            setStatus('Googleスプレッドシートから読み込み完了');
+        } else {
+            setStatus('読み込みデータが見つかりません');
         }
-
+    } catch (error) {
+        console.error('読み込みエラー:', error);
+        setStatus('読み込みに失敗しました: ' + error.message);
+    }
+}
         // ステータス更新
         function setStatus(message) {
             document.getElementById('statusText').textContent = message;
