@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マンダラート型メモ帳</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn.success {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+        }
+
+        .google-config {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .google-config input {
+            padding: 6px 10px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            font-size: 11px;
+            width: 150px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .navigation {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .nav-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #333;
+        }
+
+        .nav-item.active {
+            background: rgba(102, 126, 234, 0.2);
+            color: #333;
+            font-weight: 500;
+        }
+
+        .nav-item.root {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+        }
+
+        .nav-actions {
+            display: none;
+            gap: 4px;
+        }
+
+        .nav-item:hover .nav-actions {
+            display: flex;
+        }
+
+        .nav-btn {
+            padding: 2px 6px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            background: rgba(102, 126, 234, 0.3);
+            color: #667eea;
+        }
+
+        .mandala-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .mandala-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .mandala-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .breadcrumb {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .breadcrumb-item {
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-item:hover {
+            color: #667eea;
+        }
+
+        .mandala-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .mandala-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+            width: 600px;
+            height: 600px;
+            max-width: 90vw;
+            max-height: 60vh;
+        }
+
+        .mandala-cell {
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mandala-cell:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: rgba(102, 126, 234, 0.4);
+        }
+
+        .mandala-cell.center {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            font-weight: bold;
+        }
+
+        .mandala-cell.center:hover {
+            transform: scale(1.05);
+        }
+
+        .mandala-cell.has-children {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-color: #667eea;
+        }
+
+        .mandala-cell.empty {
+            border-style: dashed;
+            border-color: rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 0.3);
+            color: #999;
+        }
+
+        .mandala-cell.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+            z-index: 1000;
+        }
+
+        .mandala-cell.drag-over {
+            border-color: #f093fb;
+            border-width: 3px;
+            background: rgba(240, 147, 251, 0.2);
+            transform: scale(1.05);
+        }
+
+        .drag-handle {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            cursor: grab;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            background: rgba(102, 126, 234, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .mandala-cell:hover .drag-handle {
+            opacity: 1;
+        }
+
+        .mandala-cell.swap-animating {
+            z-index: 1000;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mandala-cell.swap-source {
+            opacity: 0.7;
+            transform: scale(0.9);
+        }
+
+        .mandala-cell.swap-target {
+            border-color: #f093fb;
+            border-width: 3px;
+            background: rgba(240, 147, 251, 0.3);
+        }
+
+        /* 長押しアニメーション用のスタイル */
+        .long-press-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1001;
+        }
+
+        .progress-ring {
+            width: 60px;
+            height: 60px;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-circle {
+            stroke: #667eea;
+            stroke-width: 4;
+            stroke-linecap: round;
+            fill: transparent;
+            stroke-dasharray: 157;
+            stroke-dashoffset: 157;
+            transition: stroke-dashoffset 0.1s linear;
+        }
+
+        .progress-ring-bg {
+            stroke: rgba(102, 126, 234, 0.2);
+            stroke-width: 4;
+            fill: transparent;
+        }
+
+        /* アニメーション用のスタイル */
+        .mandala-cell.animating {
+            z-index: 1000;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mandala-cell.fade-out {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.5s ease-out;
+        }
+
+        .mandala-cell.fade-in {
+            opacity: 0;
+            transform: scale(0.8);
+            animation: fadeInScale 0.6s ease-out forwards;
+        }
+
+        .mandala-cell.slide-to-center {
+            z-index: 1000;
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mandala-grid.transitioning {
+            pointer-events: none;
+        }
+
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideFromCenter {
+            0% {
+                opacity: 0;
+                transform: translate(var(--from-x), var(--from-y)) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+        .slide-from-center {
+            animation: slideFromCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .cell-text {
+            flex: 1;
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.4;
+            resize: none;
+            color: inherit;
+        }
+
+        .cell-text::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .mandala-cell:not(.center) .cell-text::placeholder {
+            color: #bbb;
+        }
+
+        .cell-text:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .cell-indicator {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        .position-label {
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            font-size: 10px;
+            opacity: 0.5;
+            font-weight: normal;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            font-size: 16px;
+            padding: 40px;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .empty-state p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shortcuts {
+            display: flex;
+            gap: 10px;
+            font-size: 10px;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                height: 95vh;
+                margin: 10px;
+            }
+            
+            .header {
+                flex-direction: column;
+                padding: 10px 15px;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .navigation {
+                width: 100%;
+                height: 150px;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                padding: 10px;
+            }
+            
+            .mandala-grid {
+                width: 90vw;
+                height: 50vh;
+            }
+            
+            .mandala-cell {
+                padding: 8px;
+            }
+            
+            .cell-text {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌸 マンダラート型メモ帳</h1>
+            <div class="controls">
+                <button class="btn" onclick="createNewMandala()">➕ 新規マンダラ</button>
+                <button class="btn success" onclick="saveToGoogleSheets()">💾 保存</button>
+                <button class="btn" onclick="loadFromGoogleSheets()">📂 読込</button>
+                <button class="btn secondary" onclick="exportAsText()">📋 エクスポート</button>
+                
+                <div class="google-config">
+                    <input type="text" id="sheetId" placeholder="スプレッドシートID">
+                    <input type="text" id="apiKey" placeholder="API Key">
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="navigation">
+                <div class="nav-title">🗂️ マンダラ一覧</div>
+                <div id="navigationList">
+                    <!-- ナビゲーションアイテムがここに表示されます -->
+                </div>
+            </div>
+
+            <div class="mandala-area">
+                <div class="mandala-header">
+                    <div class="mandala-title" id="mandalaTitle">新しいマンダラを作成してください</div>
+                    <div class="breadcrumb" id="breadcrumb">
+                        <!-- パンくずリストがここに表示されます -->
+                    </div>
+                </div>
+
+                <div class="mandala-container" id="mandalaContainer">
+                    <div class="empty-state">
+                        <h3>🌸 マンダラートで思考を整理しましょう</h3>
+                        <p>中央にメインテーマ、周囲8マスに関連要素を配置</p>
+                        <p>各マスは最大8個の子要素を持てます</p>
+                        <p>マスをクリックして深く掘り下げ可能</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status">
+            <span id="statusText">準備完了</span>
+            <div class="shortcuts">
+                <span>中央マス: メインテーマ</span>
+                <span>周囲8マス: 関連要素</span>
+                <span>長押し: 階層移動（余白部分）</span>
+                <span>ドラッグ: セル並び替え（⋮⋮部分）</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // マンダラートデータ構造
+        let mandalaData = {};
+        let currentMandalaId = null;
+        let nextId = 1;
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFromLocalStorage();
+            renderNavigation();
+            
+            if (Object.keys(mandalaData).length === 0) {
+                // 初回起動時は空状態を表示
+                showEmptyState();
+            } else {
+                // 最初のマンダラを表示
+                const firstId = Object.keys(mandalaData)[0];
+                if (firstId) {
+                    selectMandala(firstId);
+                }
+            }
+        });
+
+        // 新しいマンダラを作成
+        function createNewMandala() {
+            const mandalaId = 'mandala_' + nextId++;
+            const newMandala = {
+                id: mandalaId,
+                title: '新しいマンダラ',
+                center: '',
+                cells: Array(8).fill(''),
+                children: {},
+                parent: null,
+                createdAt: new Date().toISOString()
+            };
+            
+            mandalaData[mandalaId] = newMandala;
+            saveToLocalStorage();
+            renderNavigation();
+            selectMandala(mandalaId);
+            setStatus('新しいマンダラを作成しました');
+        }
+
+        // マンダラを選択
+        function selectMandala(mandalaId) {
+            currentMandalaId = mandalaId;
+            renderMandala(mandalaId);
+            renderNavigation(); // アクティブ状態を更新
+        }
+
+        // マンダラを描画
+        function renderMandala(mandalaId) {
+            const mandala = mandalaData[mandalaId];
+            if (!mandala) return;
+
+            const container = document.getElementById('mandalaContainer');
+            const titleElement = document.getElementById('mandalaTitle');
+            const breadcrumbElement = document.getElementById('breadcrumb');
+
+            titleElement.textContent = mandala.title;
+            
+            // パンくずリスト作成
+            const breadcrumbs = [];
+            let current = mandala;
+            while (current) {
+                breadcrumbs.unshift(current);
+                current = current.parent ? mandalaData[current.parent] : null;
+            }
+            
+            breadcrumbElement.innerHTML = breadcrumbs.map((item, index) => 
+                `<span class="breadcrumb-item" onclick="selectMandala('${item.id}')">${item.title}</span>`
+            ).join(' <span>→</span> ');
+
+            // マンダラグリッドを作成
+            container.innerHTML = '';
+            const grid = document.createElement('div');
+            grid.className = 'mandala-grid';
+
+            // 3x3のグリッド配置（中央が4番目）
+            const positions = [
+                { row: 0, col: 0, label: '1', index: 0 },
+                { row: 0, col: 1, label: '2', index: 1 },
+                { row: 0, col: 2, label: '3', index: 2 },
+                { row: 1, col: 0, label: '4', index: 3 },
+                { row: 1, col: 1, label: '中心', index: -1 }, // 中央
+                { row: 1, col: 2, label: '5', index: 4 },
+                { row: 2, col: 0, label: '6', index: 5 },
+                { row: 2, col: 1, label: '7', index: 6 },
+                { row: 2, col: 2, label: '8', index: 7 }
+            ];
+
+            positions.forEach(pos => {
+                const cell = document.createElement('div');
+                cell.className = 'mandala-cell';
+                
+                if (pos.index === -1) {
+                    // 中央セル
+                    cell.classList.add('center');
+                    cell.innerHTML = `
+                        <div class="position-label">${pos.label}</div>
+                        <textarea class="cell-text" placeholder="メインテーマ">${mandala.center}</textarea>
+                    `;
+                    
+                    const textarea = cell.querySelector('.cell-text');
+                    textarea.addEventListener('input', function() {
+                        mandala.center = this.value;
+                        mandala.title = this.value || '新しいマンダラ';
+                        saveToLocalStorage();
+                        renderNavigation();
+                        document.getElementById('mandalaTitle').textContent = mandala.title;
+                    });
+                    
+                    // 中心セルの長押しで上位移動
+                    let centerLongPressTimer = null;
+                    let centerLongPressOverlay = null;
+                    let centerProgressCircle = null;
+                    
+                    function startCenterLongPress(e) {
+                        // テキストエリア上では長押しを無効化
+                        if (e.target.classList.contains('cell-text')) return;
+                        // ドラッグハンドル上では長押しを無効化（中心セルにはないが念のため）
+                        if (e.target.classList.contains('drag-handle')) return;
+                        
+                        // 親がない場合は長押し無効
+                        if (!mandala.parent) return;
+                        
+                        e.preventDefault();
+                        
+                        // 長押しオーバーレイを作成
+                        centerLongPressOverlay = document.createElement('div');
+                        centerLongPressOverlay.className = 'long-press-overlay';
+                        centerLongPressOverlay.innerHTML = `
+                            <svg class="progress-ring">
+                                <circle class="progress-ring-bg" cx="30" cy="30" r="25"></circle>
+                                <circle class="progress-ring-circle" cx="30" cy="30" r="25"></circle>
+                            </svg>
+                        `;
+                        cell.appendChild(centerLongPressOverlay);
+                        
+                        centerProgressCircle = centerLongPressOverlay.querySelector('.progress-ring-circle');
+                        
+                        // プログレスアニメーション（上位移動は緑色）
+                        centerProgressCircle.style.stroke = '#4facfe';
+                        
+                        let progress = 0;
+                        const duration = 1000; // 1秒
+                        const interval = 16; // 60fps
+                        
+                        function updateCenterProgress() {
+                            progress += interval;
+                            const percentage = Math.min(progress / duration, 1);
+                            const offset = 157 - (157 * percentage);
+                            centerProgressCircle.style.strokeDashoffset = offset;
+                            
+                            if (percentage < 1) {
+                                centerLongPressTimer = setTimeout(updateCenterProgress, interval);
+                            } else {
+                                // 長押し完了 - 親マンダラに移動
+                                completeCenterLongPress();
+                            }
+                        }
+                        
+                        updateCenterProgress();
+                    }
+                    
+                    function cancelCenterLongPress() {
+                        if (centerLongPressTimer) {
+                            clearTimeout(centerLongPressTimer);
+                            centerLongPressTimer = null;
+                        }
+                        if (centerLongPressOverlay) {
+                            centerLongPressOverlay.remove();
+                            centerLongPressOverlay = null;
+                        }
+                    }
+                    
+                    function completeCenterLongPress() {
+                        cancelCenterLongPress();
+                        console.log('中心セル長押し完了 - 上位移動開始');
+                        // アニメーション付きで親マンダラに移動
+                        animateToParentMandala(mandalaId);
+                    }
+                    
+                    // 中心セルの長押しイベントリスナー（テキストエリア以外）
+                    cell.addEventListener('mousedown', startCenterLongPress);
+                    cell.addEventListener('mouseup', cancelCenterLongPress);
+                    cell.addEventListener('mouseleave', cancelCenterLongPress);
+                    cell.addEventListener('touchstart', startCenterLongPress);
+                    cell.addEventListener('touchend', cancelCenterLongPress);
+                    
+                    // 中心セルのテキストエリアでのダブルクリック復活
+                    textarea.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        // 通常のテキスト選択を許可（何もしない）
+                    });
+                } else {
+                    // 周囲のセル
+                    const cellValue = mandala.cells[pos.index] || '';
+                    const hasChildren = mandala.children && mandala.children[pos.index];
+                    
+                    if (hasChildren) {
+                        cell.classList.add('has-children');
+                    } else if (!cellValue) {
+                        cell.classList.add('empty');
+                    }
+                    
+                    cell.innerHTML = `
+                        <div class="position-label">${pos.label}</div>
+                        <div class="drag-handle" draggable="true">⋮⋮</div>
+                        <textarea class="cell-text" placeholder="関連要素${pos.index + 1}">${cellValue}</textarea>
+                        ${hasChildren ? '<div class="cell-indicator">🌸</div>' : ''}
+                    `;
+                    
+                    const textarea = cell.querySelector('.cell-text');
+                    const dragHandle = cell.querySelector('.drag-handle');
+                    
+                    textarea.addEventListener('input', function() {
+                        mandala.cells[pos.index] = this.value;
+                        saveToLocalStorage();
+                        
+                        // 空になったらクラス更新
+                        if (!this.value) {
+                            cell.classList.add('empty');
+                            cell.classList.remove('has-children');
+                        } else {
+                            cell.classList.remove('empty');
+                        }
+                    });
+                    
+                    // ドラッグ&ドロップイベント（長押しをキャンセル）
+                    dragHandle.addEventListener('dragstart', function(e) {
+                        cancelLongPress(); // ドラッグ開始時に長押しをキャンセル
+                        cell.classList.add('dragging');
+                        e.dataTransfer.setData('text/plain', pos.index.toString());
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+                    
+                    dragHandle.addEventListener('dragend', function(e) {
+                        cell.classList.remove('dragging');
+                    });
+                    
+                    cell.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (!cell.classList.contains('dragging')) {
+                            cell.classList.add('drag-over');
+                        }
+                    });
+                    
+                    cell.addEventListener('dragleave', function(e) {
+                        cell.classList.remove('drag-over');
+                    });
+                    
+                    cell.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        cell.classList.remove('drag-over');
+                        
+                        if (cell.classList.contains('dragging')) return;
+                        
+                        const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                        const targetIndex = pos.index;
+                        
+                        if (sourceIndex !== targetIndex) {
+                            // アニメーション付きでセル交換
+                            swapMandalaCells(mandalaId, sourceIndex, targetIndex);
+                        }
+                    });
+                    
+                    // 長押しイベントの追加（テキストエリア以外）
+                    let longPressTimer = null;
+                    let longPressOverlay = null;
+                    let progressCircle = null;
+                    let longPressStartTime = 0;
+                    
+                    function startLongPress(e) {
+                        // テキストエリア上では長押しを無効化
+                        if (e.target.classList.contains('cell-text')) return;
+                        // ドラッグハンドル上では長押しを無効化
+                        if (e.target.classList.contains('drag-handle')) return;
+                        
+                        e.preventDefault();
+                        longPressStartTime = Date.now();
+                        
+                        // 長押しオーバーレイを作成
+                        longPressOverlay = document.createElement('div');
+                        longPressOverlay.className = 'long-press-overlay';
+                        longPressOverlay.innerHTML = `
+                            <svg class="progress-ring">
+                                <circle class="progress-ring-bg" cx="30" cy="30" r="25"></circle>
+                                <circle class="progress-ring-circle" cx="30" cy="30" r="25"></circle>
+                            </svg>
+                        `;
+                        cell.appendChild(longPressOverlay);
+                        
+                        progressCircle = longPressOverlay.querySelector('.progress-ring-circle');
+                        
+                        // プログレスアニメーション
+                        let progress = 0;
+                        const duration = 1000; // 1秒
+                        const interval = 16; // 60fps
+                        
+                        function updateProgress() {
+                            progress += interval;
+                            const percentage = Math.min(progress / duration, 1);
+                            const offset = 157 - (157 * percentage);
+                            progressCircle.style.strokeDashoffset = offset;
+                            
+                            if (percentage < 1) {
+                                longPressTimer = setTimeout(updateProgress, interval);
+                            } else {
+                                // 長押し完了 - 子マンダラに移動
+                                completeLongPress();
+                            }
+                        }
+                        
+                        updateProgress();
+                    }
+                    
+                    function cancelLongPress() {
+                        if (longPressTimer) {
+                            clearTimeout(longPressTimer);
+                            longPressTimer = null;
+                        }
+                        if (longPressOverlay) {
+                            longPressOverlay.remove();
+                            longPressOverlay = null;
+                        }
+                    }
+                    
+                    function completeLongPress() {
+                        cancelLongPress();
+                        const currentValue = textarea.value.trim();
+                        if (currentValue) {
+                            // アニメーション付きで子マンダラに移動
+                            createOrShowChildMandalaWithAnimation(mandalaId, pos.index);
+                        } else {
+                            textarea.focus();
+                            textarea.placeholder = 'テキストを入力してから長押し';
+                        }
+                    }
+                    
+                    // 長押しイベントリスナー（テキストエリア以外）
+                    cell.addEventListener('mousedown', startLongPress);
+                    cell.addEventListener('mouseup', cancelLongPress);
+                    cell.addEventListener('mouseleave', cancelLongPress);
+                    cell.addEventListener('touchstart', startLongPress);
+                    cell.addEventListener('touchend', cancelLongPress);
+                    
+                    // テキストエリアでのダブルクリック復活
+                    textarea.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        // 通常のテキスト選択を許可（何もしない）
+                    });
+                    
+                    // 右クリックで子マンダラを削除
+                    cell.addEventListener('contextmenu', function(e) {
+                        e.preventDefault();
+                        if (hasChildren) {
+                            if (confirm('子マンダラを削除しますか？')) {
+                                deleteChildMandala(mandalaId, pos.index);
+                            }
+                        }
+                    });
+                }
+                
+                grid.appendChild(cell);
+            });
+
+            container.appendChild(grid);
+        }
+
+        // アニメーション付きで子マンダラを作成または表示
+        function createOrShowChildMandalaWithAnimation(parentId, cellIndex) {
+            const parent = mandalaData[parentId];
+            if (!parent) return;
+
+            const cellValue = parent.cells[cellIndex] || '';
+            
+            if (!cellValue.trim()) {
+                alert('まず関連要素を入力してください');
+                return;
+            }
+
+            // 既存の子マンダラがあるか確認
+            let childId;
+            if (parent.children && parent.children[cellIndex]) {
+                childId = parent.children[cellIndex];
+            } else {
+                // 新しい子マンダラを作成
+                childId = 'mandala_' + nextId++;
+                const childMandala = {
+                    id: childId,
+                    title: cellValue,
+                    center: cellValue,
+                    cells: Array(8).fill(''),
+                    children: {},
+                    parent: parentId,
+                    createdAt: new Date().toISOString()
+                };
+
+                mandalaData[childId] = childMandala;
+                
+                if (!parent.children) parent.children = {};
+                parent.children[cellIndex] = childId;
+                saveToLocalStorage();
+                renderNavigation();
+            }
+
+            // アニメーション実行
+            animateToChildMandala(parentId, cellIndex, childId);
+        }
+
+        // 下位移動のアニメーション（クリーンアップ改良）
+        function animateToChildMandala(parentId, cellIndex, childId) {
+            const grid = document.querySelector('.mandala-grid');
+            const cells = grid.querySelectorAll('.mandala-cell');
+            
+            // Step 1: 選択されたセル以外をフェードアウト
+            grid.classList.add('transitioning');
+            
+            cells.forEach((cell, index) => {
+                const positions = [0, 1, 2, 3, -1, 4, 5, 6, 7]; // -1は中央
+                const actualIndex = positions[index];
+                
+                if (actualIndex !== cellIndex && actualIndex !== -1) {
+                    cell.classList.add('fade-out');
+                }
+            });
+
+            setTimeout(() => {
+                // Step 2: 選択されたセルを中央に移動
+                const selectedCell = cells[getGridIndexFromCellIndex(cellIndex)];
+                const centerCell = cells[4]; // 中央は常に4番目
+                
+                if (selectedCell && centerCell) {
+                    const gridRect = grid.getBoundingClientRect();
+                    const selectedRect = selectedCell.getBoundingClientRect();
+                    const centerRect = centerCell.getBoundingClientRect();
+                    
+                    const deltaX = centerRect.left - selectedRect.left;
+                    const deltaY = centerRect.top - selectedRect.top;
+                    
+                    selectedCell.classList.add('slide-to-center');
+                    selectedCell.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.1)`;
+                }
+
+                setTimeout(() => {
+                    // Step 3: 新しいマンダラを表示
+                    currentMandalaId = childId;
+                    renderMandala(childId);
+                    
+                    // Step 4: 子マンダラのセルを順次表示
+                    setTimeout(() => {
+                        addSequentialFadeIn();
+                    }, 100);
+                    
+                    setStatus(`子マンダラ "${mandalaData[childId].title}" に移動しました`);
+                }, 800);
+            }, 500);
+        }
+
+        // 上位移動のアニメーション（改良版）
+        function animateToParentMandala(childId) {
+            console.log('=== animateToParentMandala 開始 ===');
+            console.log('childId:', childId);
+            
+            const child = mandalaData[childId];
+            if (!child || !child.parent) {
+                console.log('エラー: 子データまたは親が見つかりません');
+                return;
+            }
+
+            const parent = mandalaData[child.parent];
+            if (!parent) {
+                console.log('エラー: 親データが見つかりません');
+                return;
+            }
+
+            console.log('child:', child);
+            console.log('parent:', parent);
+
+            // 子マンダラの位置を特定
+            let cellIndex = -1;
+            if (parent.children) {
+                for (let index in parent.children) {
+                    if (parent.children[index] === childId) {
+                        cellIndex = parseInt(index);
+                        break;
+                    }
+                }
+            }
+
+            console.log('cellIndex:', cellIndex);
+            
+            if (cellIndex === -1) {
+                console.log('エラー: セルインデックスが見つかりません');
+                return;
+            }
+
+            const grid = document.querySelector('.mandala-grid');
+            const centerCell = grid.querySelector('.mandala-cell.center');
+            const allCells = grid.querySelectorAll('.mandala-cell');
+            
+            // Step 1: 周囲のセルをフェードアウト
+            grid.classList.add('transitioning');
+            
+            allCells.forEach((cell, index) => {
+                if (index !== 4) { // 中央以外
+                    cell.classList.add('fade-out');
+                }
+            });
+
+            setTimeout(() => {
+                console.log('フェードアウト完了 - 座標計算開始');
+                
+                // Step 2: 中心セルを親の正しい位置に移動
+                const gridRect = grid.getBoundingClientRect();
+                const centerRect = centerCell.getBoundingClientRect();
+                
+                // 目標位置を計算
+                const targetGridIndex = getGridIndexFromCellIndex(cellIndex);
+                const targetPosition = getTargetPositionRelative(targetGridIndex, gridRect);
+                
+                const deltaX = targetPosition.x - (centerRect.left - gridRect.left + centerRect.width / 2);
+                const deltaY = targetPosition.y - (centerRect.top - gridRect.top + centerRect.height / 2);
+                
+                centerCell.classList.add('slide-to-center');
+                centerCell.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.8)`;
+
+                setTimeout(() => {
+                    // Step 3: 親マンダラを表示
+                    currentMandalaId = child.parent;
+                    renderMandala(child.parent);
+                    
+                    // Step 4: 順次フェードインアニメーション
+                    setTimeout(() => {
+                        addSequentialFadeIn();
+                    }, 100);
+                    
+                    setStatus(`親マンダラ "${parent.title}" に戻りました`);
+                }, 800);
+            }, 500);
+        }
+
+        // 順次フェードインアニメーション
+        function addSequentialFadeIn() {
+            const grid = document.querySelector('.mandala-grid');
+            const cells = grid.querySelectorAll('.mandala-cell');
+            
+            // 中央セルから始めて、他のセルを順番に表示
+            cells.forEach((cell, index) => {
+                if (index === 4) {
+                    // 中央セルは即座に表示
+                    cell.style.opacity = '1';
+                    cell.style.transform = 'scale(1)';
+                } else {
+                    // 他のセルは順番に表示
+                    cell.classList.add('fade-in');
+                    cell.style.animationDelay = `${(index < 4 ? index : index - 1) * 0.1}s`;
+                }
+            });
+            
+            // アニメーション完了後にクリーンアップ
+            setTimeout(() => {
+                cells.forEach(cell => {
+                    cell.classList.remove('fade-in', 'fade-out', 'slide-to-center', 'animating');
+                    cell.style.animation = '';
+                    cell.style.animationDelay = '';
+                    cell.style.transform = '';
+                    cell.style.opacity = '';
+                });
+                grid.classList.remove('transitioning');
+            }, 1500);
+        }
+
+        // グリッドに対する相対位置を取得
+        function getTargetPositionRelative(gridIndex, gridRect) {
+            const cellSize = gridRect.width / 3;
+            
+            const row = Math.floor(gridIndex / 3);
+            const col = gridIndex % 3;
+            
+            return {
+                x: (col * cellSize) + (cellSize / 2),
+                y: (row * cellSize) + (cellSize / 2)
+            };
+        }
+
+        // セルインデックスからグリッドインデックスを取得（実際の構造調査版）
+        function getGridIndexFromCellIndex(cellIndex) {
+            console.log('=== 実際のグリッド構造調査 ===');
+            console.log('入力 cellIndex:', cellIndex);
+            
+            // 実際のDOM構造を調査
+            const grid = document.querySelector('.mandala-grid');
+            const cells = grid.querySelectorAll('.mandala-cell');
+            
+            console.log('実際のDOM構造:');
+            cells.forEach((cell, index) => {
+                const label = cell.querySelector('.position-label');
+                const labelText = label ? label.textContent : 'unknown';
+                console.log(`  gridIndex ${index}: ラベル "${labelText}"`);
+            });
+            
+            // 現在のマッピング（間違っている可能性）
+            const currentMapping = [
+                0, // cellIndex 0 → gridIndex 0 (1番)
+                1, // cellIndex 1 → gridIndex 1 (2番)  
+                2, // cellIndex 2 → gridIndex 2 (3番)
+                3, // cellIndex 3 → gridIndex 3 (4番) ← これが間違い？
+                5, // cellIndex 4 → gridIndex 5 (6番)
+                6, // cellIndex 5 → gridIndex 6 (7番)
+                7, // cellIndex 6 → gridIndex 7 (8番)
+                8  // cellIndex 7 → gridIndex 8 (9番)
+            ];
+            
+            // 修正案: 実際のDOM構造に基づくマッピング
+            // DOM構造: 0 1 2 / 3 4 5 / 6 7 8
+            // セル配置: 1 2 3 / 4 中 5 / 6 7 8
+            const correctedMapping = [
+                0, // cellIndex 0 (1番) → gridIndex 0 (左上)
+                1, // cellIndex 1 (2番) → gridIndex 1 (上中)  
+                2, // cellIndex 2 (3番) → gridIndex 2 (右上)
+                3, // cellIndex 3 (4番) → gridIndex 3 (左中) ← 仮説: これが6番位置になる
+                5, // cellIndex 4 (5番) → gridIndex 5 (右中)
+                6, // cellIndex 5 (6番) → gridIndex 6 (左下)
+                7, // cellIndex 6 (7番) → gridIndex 7 (下中)
+                8  // cellIndex 7 (8番) → gridIndex 8 (右下)
+            ];
+            
+            // テスト用: 仮説検証のため 4番 を正しい位置に修正
+            const testMapping = [
+                0, // cellIndex 0 (1番) → gridIndex 0 (左上)
+                1, // cellIndex 1 (2番) → gridIndex 1 (上中)  
+                2, // cellIndex 2 (3番) → gridIndex 2 (右上)
+                6, // cellIndex 3 (4番) → gridIndex 6 (左下) ← 実際の位置？
+                5, // cellIndex 4 (5番) → gridIndex 5 (右中)
+                3, // cellIndex 5 (6番) → gridIndex 3 (左中) ← 逆転？
+                7, // cellIndex 6 (7番) → gridIndex 7 (下中)
+                8  // cellIndex 7 (8番) → gridIndex 8 (右下)
+            ];
+            
+            console.log('現在のマッピング:', currentMapping);
+            console.log('仮説修正マッピング:', testMapping);
+            console.log('使用マッピング:', currentMapping[cellIndex]);
+            
+            // 実際のグリッド位置を調査
+            const targetGridIndex = currentMapping[cellIndex];
+            if (cells[targetGridIndex]) {
+                const targetCell = cells[targetGridIndex];
+                const rect = targetCell.getBoundingClientRect();
+                console.log('対象セルの実際の位置:', {
+                    gridIndex: targetGridIndex,
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height
+                });
+            }
+            
+            console.log('==============================');
+            
+            return currentMapping[cellIndex];
+        }
+
+        // グリッドインデックスから座標を取得（実際の位置修正版）
+        function getTargetPositionRelative(gridIndex, gridRect) {
+            console.log('=== getTargetPositionRelative 実際位置修正版 ===');
+            console.log('入力 gridIndex:', gridIndex);
+            console.log('入力 gridRect:', gridRect);
+            
+            // 実際のDOM要素から位置を取得
+            const grid = document.querySelector('.mandala-grid');
+            const cells = grid.querySelectorAll('.mandala-cell');
+            
+            if (cells[gridIndex]) {
+                const targetCell = cells[gridIndex];
+                const cellRect = targetCell.getBoundingClientRect();
+                
+                // グリッドに対する相対位置を計算
+                const relativeX = cellRect.left - gridRect.left + cellRect.width / 2;
+                const relativeY = cellRect.top - gridRect.top + cellRect.height / 2;
+                
+                console.log('実際のセル位置:', {
+                    gridIndex: gridIndex,
+                    cellRect: cellRect,
+                    relativeX: relativeX,
+                    relativeY: relativeY
+                });
+                
+                const result = {
+                    x: relativeX,
+                    y: relativeY
+                };
+                
+                console.log('修正後の結果座標:', result);
+                console.log('==========================================');
+                
+                return result;
+            }
+            
+            // フォールバック: 従来の計算
+            const cellSize = gridRect.width / 3;
+            const row = Math.floor(gridIndex / 3);
+            const col = gridIndex % 3;
+            
+            return {
+                x: (col * cellSize) + (cellSize / 2),
+                y: (row * cellSize) + (cellSize / 2)
+            };
+        }
+        function createOrShowChildMandala(parentId, cellIndex) {
+            const parent = mandalaData[parentId];
+            if (!parent) return;
+
+            // 現在のセルの値を取得（リアルタイムで更新された値）
+            const cellValue = parent.cells[cellIndex] || '';
+            
+            if (!cellValue.trim()) {
+                alert('まず関連要素を入力してください');
+                return;
+            }
+
+            // 既存の子マンダラがあるか確認
+            if (parent.children && parent.children[cellIndex]) {
+                selectMandala(parent.children[cellIndex]);
+                return;
+            }
+
+            // 新しい子マンダラを作成
+            const childId = 'mandala_' + nextId++;
+            const childMandala = {
+                id: childId,
+                title: cellValue,
+                center: cellValue,
+                cells: Array(8).fill(''),
+                children: {},
+                parent: parentId,
+                createdAt: new Date().toISOString()
+            };
+
+            mandalaData[childId] = childMandala;
+            
+            // 親の子として登録
+            if (!parent.children) parent.children = {};
+            parent.children[cellIndex] = childId;
+
+            saveToLocalStorage();
+            renderNavigation();
+            selectMandala(childId);
+            setStatus(`子マンダラ "${cellValue}" を作成しました`);
+        }
+
+        // セルの入れ替え機能（アニメーション付き）
+        function swapMandalaCells(mandalaId, sourceIndex, targetIndex) {
+            const mandala = mandalaData[mandalaId];
+            if (!mandala) return;
+            
+            // アニメーション付きで交換実行
+            animateSwapCells(mandalaId, sourceIndex, targetIndex);
+        }
+
+        // セル交換のアニメーション
+        function animateSwapCells(mandalaId, sourceIndex, targetIndex) {
+            const mandala = mandalaData[mandalaId];
+            const grid = document.querySelector('.mandala-grid');
+            const cells = grid.querySelectorAll('.mandala-cell:not(.center)');
+            
+            // グリッドインデックスを取得
+            const sourceGridIndex = getGridIndexFromCellIndex(sourceIndex);
+            const targetGridIndex = getGridIndexFromCellIndex(targetIndex);
+            
+            const sourceCell = cells[sourceGridIndex < 4 ? sourceGridIndex : sourceGridIndex - 1];
+            const targetCell = cells[targetGridIndex < 4 ? targetGridIndex : targetGridIndex - 1];
+            
+            if (!sourceCell || !targetCell) return;
+            
+            // Step 1: 交換対象以外のセルをフェードアウト
+            grid.classList.add('transitioning');
+            
+            cells.forEach((cell, index) => {
+                const actualIndex = index < 4 ? index : index + 1;
+                if (actualIndex !== sourceGridIndex && actualIndex !== targetGridIndex) {
+                    cell.classList.add('fade-out');
+                }
+            });
+            
+            // Step 2: ソースセルとターゲットセルをハイライト
+            sourceCell.classList.add('swap-source');
+            targetCell.classList.add('swap-target');
+            
+            setTimeout(() => {
+                // Step 3: 座標を計算してセルを交換位置に移動
+                const sourceRect = sourceCell.getBoundingClientRect();
+                const targetRect = targetCell.getBoundingClientRect();
+                
+                const sourceDeltaX = targetRect.left - sourceRect.left;
+                const sourceDeltaY = targetRect.top - sourceRect.top;
+                const targetDeltaX = sourceRect.left - targetRect.left;
+                const targetDeltaY = sourceRect.top - targetRect.top;
+                
+                // 同時にスライド移動
+                sourceCell.classList.add('swap-animating');
+                targetCell.classList.add('swap-animating');
+                
+                sourceCell.style.transform = `translate(${sourceDeltaX}px, ${sourceDeltaY}px)`;
+                targetCell.style.transform = `translate(${targetDeltaX}px, ${targetDeltaY}px)`;
+                
+                setTimeout(() => {
+                    // Step 4: データを実際に交換
+                    const tempText = mandala.cells[sourceIndex];
+                    mandala.cells[sourceIndex] = mandala.cells[targetIndex];
+                    mandala.cells[targetIndex] = tempText;
+                    
+                    // 子マンダラの参照も交換
+                    if (mandala.children) {
+                        const tempChild = mandala.children[sourceIndex];
+                        const targetChild = mandala.children[targetIndex];
+                        
+                        if (tempChild) {
+                            mandala.children[targetIndex] = tempChild;
+                        } else {
+                            delete mandala.children[targetIndex];
+                        }
+                        
+                        if (targetChild) {
+                            mandala.children[sourceIndex] = targetChild;
+                        } else {
+                            delete mandala.children[sourceIndex];
+                        }
+                    }
+                    
+                    saveToLocalStorage();
+                    
+                    // Step 5: マンダラを再描画
+                    currentMandalaId = mandalaId;
+                    renderMandala(mandalaId);
+                    
+                    // Step 6: 新しいセルを順次フェードイン
+                    setTimeout(() => {
+                        addSequentialFadeInForSwap();
+                    }, 100);
+                    
+                    setStatus(`セル${sourceIndex + 1}とセル${targetIndex + 1}を交換しました`);
+                }, 600);
+            }, 300);
+        }
+
+        // 交換後の順次フェードイン
+        function addSequentialFadeInForSwap() {
+            const grid = document.querySelector('.mandala-grid');
+            const cells = grid.querySelectorAll('.mandala-cell');
+            
+            cells.forEach((cell, index) => {
+                if (index !== 4) { // 中央以外
+                    cell.classList.add('fade-in');
+                    const delay = (index < 4 ? index : index - 1) * 0.08; // より高速
+                    cell.style.animationDelay = `${delay}s`;
+                }
+            });
+            
+            // アニメーション完了後にクリーンアップ
+            setTimeout(() => {
+                cells.forEach(cell => {
+                    cell.classList.remove('fade-in', 'fade-out', 'swap-animating', 'swap-source', 'swap-target');
+                    cell.style.animation = '';
+                    cell.style.animationDelay = '';
+                    cell.style.transform = '';
+                    cell.style.opacity = '';
+                });
+                grid.classList.remove('transitioning');
+            }, 1000);
+        }
+        function deleteChildMandala(parentId, cellIndex) {
+            const parent = mandalaData[parentId];
+            if (!parent || !parent.children || !parent.children[cellIndex]) return;
+
+            const childId = parent.children[cellIndex];
+            
+            // 子マンダラとその子を再帰的に削除
+            function deleteRecursively(mandalaId) {
+                const mandala = mandalaData[mandalaId];
+                if (mandala && mandala.children) {
+                    Object.values(mandala.children).forEach(deleteRecursively);
+                }
+                delete mandalaData[mandalaId];
+            }
+            
+            deleteRecursively(childId);
+            delete parent.children[cellIndex];
+
+            saveToLocalStorage();
+            renderNavigation();
+            renderMandala(parentId); // 現在のマンダラを再描画
+            setStatus('子マンダラを削除しました');
+        }
+
+        // マンダラを削除
+        function deleteMandala(mandalaId) {
+            if (Object.keys(mandalaData).length <= 1) {
+                alert('最後のマンダラは削除できません');
+                return;
+            }
+
+            if (confirm('このマンダラを削除しますか？')) {
+                // 親の子リストからも削除
+                const mandala = mandalaData[mandalaId];
+                if (mandala.parent) {
+                    const parent = mandalaData[mandala.parent];
+                    if (parent && parent.children) {
+                        Object.keys(parent.children).forEach(key => {
+                            if (parent.children[key] === mandalaId) {
+                                delete parent.children[key];
+                            }
+                        });
+                    }
+                }
+
+                // 子マンダラも再帰的に削除
+                function deleteRecursively(id) {
+                    const m = mandalaData[id];
+                    if (m && m.children) {
+                        Object.values(m.children).forEach(deleteRecursively);
+                    }
+                    delete mandalaData[id];
+                }
+                
+                deleteRecursively(mandalaId);
+
+                saveToLocalStorage();
+                renderNavigation();
+
+                // 別のマンダラを表示
+                const remainingIds = Object.keys(mandalaData);
+                if (remainingIds.length > 0) {
+                    selectMandala(remainingIds[0]);
+                } else {
+                    showEmptyState();
+                }
+                
+                setStatus('マンダラを削除しました');
+            }
+        }
+
+        // ナビゲーションを描画
+        function renderNavigation() {
+            const container = document.getElementById('navigationList');
+            container.innerHTML = '';
+
+            // ルートレベルのマンダラのみ表示
+            const rootMandalas = Object.values(mandalaData).filter(m => !m.parent);
+            
+            rootMandalas.forEach(mandala => {
+                const item = document.createElement('div');
+                item.className = `nav-item root ${currentMandalaId === mandala.id ? 'active' : ''}`;
+                item.innerHTML = `
+                    <span>${mandala.title}</span>
+                    <div class="nav-actions">
+                        <button class="nav-btn" onclick="deleteMandala('${mandala.id}')">×</button>
+                    </div>
+                `;
+                
+                item.addEventListener('click', function(e) {
+                    if (!e.target.classList.contains('nav-btn')) {
+                        selectMandala(mandala.id);
+                    }
+                });
+                
+                container.appendChild(item);
+            });
+        }
+
+        // 空状態を表示
+        function showEmptyState() {
+            const container = document.getElementById('mandalaContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>🌸 マンダラートで思考を整理しましょう</h3>
+                    <p>中央にメインテーマ、周囲8マスに関連要素を配置</p>
+                    <p>各マスは最大8個の子要素を持てます</p>
+                    <p>マスをダブルクリックして深く掘り下げ可能</p>
+                </div>
+            `;
+            document.getElementById('mandalaTitle').textContent = '新しいマンダラを作成してください';
+            document.getElementById('breadcrumb').innerHTML = '';
+        }
+
+        // テキストとしてエクスポート
+        function exportAsText() {
+            function mandalaToText(mandalaId, level = 0) {
+                const mandala = mandalaData[mandalaId];
+                if (!mandala) return '';
+                
+                const indent = '  '.repeat(level);
+                let text = `${indent}🌸 ${mandala.title}\n`;
+                text += `${indent}   中心: ${mandala.center}\n`;
+                
+                mandala.cells.forEach((cell, index) => {
+                    if (cell.trim()) {
+                        text += `${indent}   ${index + 1}. ${cell}\n`;
+                        
+                        if (mandala.children && mandala.children[index]) {
+                            text += mandalaToText(mandala.children[index], level + 1);
+                        }
+                    }
+                });
+                
+                return text;
+            }
+            
+            let exportText = '🌸 マンダラートエクスポート\n\n';
+            const rootMandalas = Object.values(mandalaData).filter(m => !m.parent);
+            
+            rootMandalas.forEach(mandala => {
+                exportText += mandalaToText(mandala.id);
+                exportText += '\n';
+            });
+            
+            navigator.clipboard.writeText(exportText).then(() => {
+                setStatus('マンダラートをクリップボードにコピーしました');
+            });
+        }
+
+        // ローカルストレージから読み込み
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('mandalaNotepad');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    mandalaData = data.mandalaData || {};
+                    nextId = data.nextId || 1;
+                } catch (e) {
+                    console.error('ローカルストレージの読み込みに失敗しました:', e);
+                }
+            }
+        }
+
+        // ローカルストレージに保存
+        function saveToLocalStorage() {
+            const data = {
+                mandalaData: mandalaData,
+                nextId: nextId
+            };
+            localStorage.setItem('mandalaNotepad', JSON.stringify(data));
+        }
+
+        // Googleスプレッドシートに保存
+        async function saveToGoogleSheets() {
+            const sheetId = document.getElementById('sheetId').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            
+            if (!sheetId || !apiKey) {
+                alert('GoogleスプレッドシートIDとAPI Keyを入力してください');
+                return;
+            }
+
+            try {
+                setStatus('Googleスプレッドシートに保存中...');
+                
+                const data = [
+                    ['Type', 'Data'],
+                    ['MANDALA_DATA', JSON.stringify(mandalaData)],
+                    ['NEXT_ID', nextId.toString()]
+                ];
+
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1?key=${apiKey}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            values: data
+                        })
+                    }
+                );
+
+                if (response.ok) {
+                    setStatus('Googleスプレッドシートに保存完了');
+                } else {
+                    throw new Error('保存に失敗しました: ' + response.status);
+                }
+            } catch (error) {
+                console.error('保存エラー:', error);
+                setStatus('保存に失敗しました: ' + error.message);
+            }
+        }
+
+        // Googleスプレッドシートから読み込み
+        async function loadFromGoogleSheets() {
+            const sheetId = document.getElementById('sheetId').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            
+            if (!sheetId || !apiKey) {
+                alert('GoogleスプレッドシートIDとAPI Keyを入力してください');
+                return;
+            }
+
+            try {
+                setStatus('Googleスプレッドシートから読み込み中...');
+                
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1?key=${apiKey}`
+                );
+
+                if (!response.ok) {
+                    throw new Error('読み込みに失敗しました: ' + response.status);
+                }
+
+                const result = await response.json();
+                const rows = result.values || [];
+                
+                if (rows.length < 2) {
+                    throw new Error('データが見つかりません');
+                }
+
+                rows.slice(1).forEach(row => {
+                    const [type, data] = row;
+                    if (type === 'MANDALA_DATA') {
+                        mandalaData = JSON.parse(data);
+                    } else if (type === 'NEXT_ID') {
+                        nextId = parseInt(data);
+                    }
+                });
+
+                saveToLocalStorage();
+                renderNavigation();
+                
+                // 最初のマンダラを表示
+                const firstId = Object.keys(mandalaData)[0];
+                if (firstId) {
+                    selectMandala(firstId);
+                } else {
+                    showEmptyState();
+                }
+                
+                setStatus('Googleスプレッドシートから読み込み完了');
+            } catch (error) {
+                console.error('読み込みエラー:', error);
+                setStatus('読み込みに失敗しました: ' + error.message);
+            }
+        }
+
+        // ステータス更新
+        function setStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+
+        // キーボードショートカット
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 's') {
+                    e.preventDefault();
+                    saveToGoogleSheets();
+                }
+            }
+        });
+
+        // テキストエリアの自動リサイズ
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('cell-text')) {
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+            }
+        });
+    </script>
+</body>
+</html>
