@@ -1632,41 +1632,37 @@
 
         // Googleスプレッドシートに保存
         // Googleスプレッドシートに保存
-async function saveToGoogleSheets() {
-    const gasUrl = 'https://script.google.com/macros/s/AKfycbywHu58aHPIFDs8kkmq1AFt61ZTk0MfJdHn32wP_bsIvdIImofZAjEfmsGhhdIpmsV6hQ/exec';
+// Googleスプレッドシートに保存
+function saveToGoogleSheets() {
+    const gasUrl = 'https://script.google.com/macros/s/AKfycbwbmX9CyWQXN3WaNdDUVNmRnKKpPyXZopzLoSHbjgtHGlKnTFFnWHyii-HsuJvz8S3b2A/exec';
     
-    try {
-        setStatus('Googleスプレッドシートに保存中...');
-        
-        const data = {
-            action: 'save',
-            mandalaData: mandalaData,
-            nextId: nextId,
-            timestamp: new Date().toISOString()
-        };
-
-        const response = await fetch(gasUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.text();
-        
-        if (result.includes('success')) {
+    setStatus('Googleスプレッドシートに保存中...');
+    
+    const data = {
+        action: 'save',
+        mandalaData: JSON.stringify(mandalaData),
+        nextId: nextId,
+        timestamp: new Date().toISOString()
+    };
+    
+    // JSONPを使用してCORS制限を回避
+    const params = new URLSearchParams(data);
+    const script = document.createElement('script');
+    script.src = gasUrl + '?' + params.toString() + '&callback=handleSaveResponse';
+    document.head.appendChild(script);
+    
+    // レスポンス処理
+    window.handleSaveResponse = function(result) {
+        document.head.removeChild(script);
+        if (result && result.status === 'success') {
             setStatus('Googleスプレッドシートに保存完了');
         } else {
-            throw new Error('保存に失敗しました');
+            setStatus('保存に失敗しました');
         }
-    } catch (error) {
-        console.error('保存エラー:', error);
-        setStatus('保存に失敗しました: ' + error.message);
-    }
+        delete window.handleSaveResponse;
+    };
 }
-
-        // Googleスプレッドシートから読み込み
+        
         // Googleスプレッドシートから読み込み
 async function loadFromGoogleSheets() {
     const gasUrl = 'https://script.google.com/macros/s/AKfycbywHu58aHPIFDs8kkmq1AFt61ZTk0MfJdHn32wP_bsIvdIImofZAjEfmsGhhdIpmsV6hQ/exec';
