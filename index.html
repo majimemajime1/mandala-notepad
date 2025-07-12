@@ -1666,9 +1666,11 @@ function saveToGoogleSheets() {
         
         // Googleスプレッドシートから読み込み
     // Googleスプレッドシートから読み込み
+    // Googleスプレッドシートから読み込み（詳細ログ版）
 function loadFromGoogleSheets() {
-    const gasUrl = 'https://script.google.com/macros/s/AKfycbxFYIfv2OAIkdqkSce8BvxUVDpYg7WX642YXL-4VXF3WoQpZAepFZ95XOKBnR0iOhXD7g/exec';
+    const gasUrl = 'https://script.google.com/macros/s/AKfycbwUmX9CyWQXN3WaNdDUVNmRnKKpPyXZopzLoSHbjgtHGlKnTFFnWHyii-HsuJvz8S3b2A/exec';
     
+    console.log('=== 読み込み開始 ===');
     setStatus('Googleスプレッドシートから読み込み中...');
     
     const data = {
@@ -1676,37 +1678,27 @@ function loadFromGoogleSheets() {
         callback: 'handleLoadResponse'
     };
     
-    // 5秒でタイムアウト
-    const timeoutId = setTimeout(() => {
-        setStatus('読み込みがタイムアウトしました');
-        if (window.handleLoadResponse) {
-            delete window.handleLoadResponse;
-        }
-    }, 5000);
-    
-    // JSONPを使用してCORS制限を回避
     const params = new URLSearchParams(data);
-    const script = document.createElement('script');
-    script.src = gasUrl + '?' + params.toString();
+    const fullUrl = gasUrl + '?' + params.toString();
+    console.log('リクエストURL:', fullUrl);
     
-    // スクリプトエラーハンドリング
-    script.onerror = function() {
-        clearTimeout(timeoutId);
-        document.head.removeChild(script);
-        setStatus('読み込みエラーが発生しました');
+    // 10秒でタイムアウト
+    const timeoutId = setTimeout(() => {
+        console.log('=== タイムアウト発生 ===');
+        setStatus('読み込みがタイムアウトしました');
         delete window.handleLoadResponse;
-    };
+    }, 10000);
     
-    document.head.appendChild(script);
-    
-    // レスポンス処理
+    // レスポンス処理関数を先に定義
     window.handleLoadResponse = function(result) {
         clearTimeout(timeoutId);
-        document.head.removeChild(script);
-        
-        console.log('GASからの応答:', result);
+        console.log('=== GASからの応答受信 ===');
+        console.log('応答内容:', result);
+        console.log('応答のタイプ:', typeof result);
+        console.log('応答のstatus:', result ? result.status : 'undefined');
         
         if (result && result.status === 'success' && result.mandalaData) {
+            console.log('読み込み成功 - データ:', result.mandalaData);
             mandalaData = result.mandalaData;
             nextId = result.nextId || 1;
             
@@ -1722,15 +1714,39 @@ function loadFromGoogleSheets() {
             
             setStatus('Googleスプレッドシートから読み込み完了');
         } else if (result && result.status === 'no_data') {
+            console.log('データなし');
             setStatus('読み込みデータが見つかりません');
+        } else if (result && result.status === 'error') {
+            console.log('GASエラー:', result.message);
+            setStatus('GASエラー: ' + result.message);
         } else {
-            console.error('予期しない応答:', result);
-            setStatus('読み込みに失敗しました: ' + (result ? result.status : '不明なエラー'));
+            console.log('予期しない応答:', result);
+            setStatus('予期しない応答形式');
         }
         
         delete window.handleLoadResponse;
     };
+    
+    // JSONPスクリプトタグを作成
+    const script = document.createElement('script');
+    script.src = fullUrl;
+    
+    script.onload = function() {
+        console.log('スクリプト正常ロード');
+    };
+    
+    script.onerror = function() {
+        clearTimeout(timeoutId);
+        console.log('=== スクリプトエラー ===');
+        setStatus('スクリプトエラーが発生しました');
+        delete window.handleLoadResponse;
+    };
+    
+    console.log('スクリプトタグ追加');
+    document.head.appendChild(script);
 }
+
+        
         // ステータス更新
         function setStatus(message) {
             document.getElementById('statusText').textContent = message;
