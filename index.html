@@ -680,14 +680,17 @@
             
             setStatus('Googleスプレッドシートに保存中...');
             
+            // データ構造を修正：GASが期待する形式に合わせる
+            const saveData = {
+                id: nextId,
+                mandalaData: mandalaData,
+                nextId: nextId,
+                timestamp: new Date().toISOString()
+            };
+            
             const data = {
                 action: 'save',
-                mandalaData: JSON.stringify({
-                    id: nextId,
-                    mandalaData: mandalaData,
-                    nextId: nextId,
-                    timestamp: new Date().toISOString()
-                }),
+                mandalaData: JSON.stringify(saveData),
                 callback: 'handleSaveResponse'
             };
             
@@ -743,38 +746,60 @@
                 clearTimeout(timeoutId);
                 document.head.removeChild(script);
                 
+                console.log('=== GASからの読み込み応答 ===');
+                console.log('応答全体:', result);
+                console.log('ステータス:', result?.status);
+                console.log('マンダラデータ:', result?.mandalaData);
+                
                 if (result && result.status === 'success' && result.mandalaData) {
                     try {
+                        // GASから返されるデータの構造を確認
                         const loadedData = result.mandalaData;
+                        console.log('読み込まれたデータ構造:', loadedData);
                         
+                        // データ構造を確認して適切に設定
                         if (loadedData.mandalaData) {
+                            // 新しい形式: { id: X, mandalaData: {...}, nextId: Y }
                             mandalaData = loadedData.mandalaData;
                             nextId = loadedData.nextId || 1;
-                            
-                            saveToLocalStorage();
-                            renderNavigation();
-                            
-                            const firstId = Object.keys(mandalaData)[0];
-                            if (firstId) {
-                                selectMandala(firstId);
-                            } else {
-                                showEmptyState();
-                            }
-                            
-                            setStatus('Googleスプレッドシートから読み込み完了');
+                            console.log('新形式でデータ設定:', mandalaData);
+                        } else if (Object.keys(loadedData).length > 0 && loadedData.mandala_1) {
+                            // 直接マンダラデータが返された場合
+                            mandalaData = loadedData;
+                            nextId = result.nextId || 1;
+                            console.log('直接形式でデータ設定:', mandalaData);
                         } else {
-                            setStatus('データ形式が正しくありません');
+                            console.log('予期しないデータ構造:', loadedData);
+                            setStatus('データ構造が予期しない形式です');
+                            return;
                         }
+                        
+                        saveToLocalStorage();
+                        renderNavigation();
+                        
+                        const firstId = Object.keys(mandalaData)[0];
+                        if (firstId) {
+                            selectMandala(firstId);
+                            console.log('最初のマンダラを選択:', firstId);
+                        } else {
+                            showEmptyState();
+                            console.log('マンダラが見つからないため空状態を表示');
+                        }
+                        
+                        setStatus('Googleスプレッドシートから読み込み完了');
                     } catch (e) {
+                        console.error('データ解析エラー:', e);
                         setStatus('データ解析エラー: ' + e.message);
                     }
                 } else {
+                    console.log('読み込み失敗:', result);
                     setStatus('読み込みに失敗しました: ' + (result?.message || 'データが見つかりません'));
                 }
                 
                 delete window.handleLoadResponse;
             };
             
+            console.log('読み込みリクエスト送信:', script.src);
             document.head.appendChild(script);
         }
 
@@ -804,17 +829,25 @@
                 clearTimeout(timeoutId);
                 document.head.removeChild(script);
                 
+                console.log('=== 一覧取得応答 ===');
+                console.log('応答全体:', result);
+                console.log('ステータス:', result?.status);
+                console.log('マンダラリスト:', result?.mandalaList);
+                
                 if (result && result.status === 'success' && result.mandalaList) {
                     availableMandalas = result.mandalaList;
                     displayMandalaSelector();
                     setStatus(`${result.mandalaList.length}個のマンダラが見つかりました`);
+                    console.log('一覧取得成功:', availableMandalas);
                 } else {
+                    console.log('一覧取得失敗:', result);
                     setStatus('一覧取得に失敗しました: ' + (result?.message || '不明なエラー'));
                 }
                 
                 delete window.handleListResponse;
             };
             
+            console.log('一覧取得リクエスト送信:', script.src);
             document.head.appendChild(script);
         }
 
