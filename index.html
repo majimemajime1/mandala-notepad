@@ -1663,8 +1663,9 @@ function saveToGoogleSheets() {
     };
 }
         
+        
         // Googleスプレッドシートから読み込み
-        // Googleスプレッドシートから読み込み
+    // Googleスプレッドシートから読み込み
 function loadFromGoogleSheets() {
     const gasUrl = 'https://script.google.com/macros/s/AKfycbw7krcVLbpSv4RsM0S6wkKFCScyqjUmMFLI98RbXnRB6pPqrMrTUs4K0o-AVKOVChRqrQ/exec';
     
@@ -1675,17 +1676,37 @@ function loadFromGoogleSheets() {
         callback: 'handleLoadResponse'
     };
     
+    // 5秒でタイムアウト
+    const timeoutId = setTimeout(() => {
+        setStatus('読み込みがタイムアウトしました');
+        if (window.handleLoadResponse) {
+            delete window.handleLoadResponse;
+        }
+    }, 5000);
+    
     // JSONPを使用してCORS制限を回避
     const params = new URLSearchParams(data);
     const script = document.createElement('script');
     script.src = gasUrl + '?' + params.toString();
+    
+    // スクリプトエラーハンドリング
+    script.onerror = function() {
+        clearTimeout(timeoutId);
+        document.head.removeChild(script);
+        setStatus('読み込みエラーが発生しました');
+        delete window.handleLoadResponse;
+    };
+    
     document.head.appendChild(script);
     
     // レスポンス処理
     window.handleLoadResponse = function(result) {
+        clearTimeout(timeoutId);
         document.head.removeChild(script);
         
-        if (result && result.mandalaData) {
+        console.log('GASからの応答:', result);
+        
+        if (result && result.status === 'success' && result.mandalaData) {
             mandalaData = result.mandalaData;
             nextId = result.nextId || 1;
             
@@ -1700,8 +1721,11 @@ function loadFromGoogleSheets() {
             }
             
             setStatus('Googleスプレッドシートから読み込み完了');
-        } else {
+        } else if (result && result.status === 'no_data') {
             setStatus('読み込みデータが見つかりません');
+        } else {
+            console.error('予期しない応答:', result);
+            setStatus('読み込みに失敗しました: ' + (result ? result.status : '不明なエラー'));
         }
         
         delete window.handleLoadResponse;
